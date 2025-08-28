@@ -1,6 +1,6 @@
 # WasteCostCalculator
 
-This is a demo of a program that helps a restourant keeps track of the food it wastes  
+This is a demo of a program that helps a restourant keeps track of the food it wastes, it was developed in close contact with a chef  
 It's a Windows Form App developed with visualstudio community, it's fully developed in c#  
 It uses a SQLite database in combo with entityframework to save, retrive and edit data  
 The program allow the user to add foods and assign them a cost, it thens allow the user to create a "waste"  
