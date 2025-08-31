@@ -19,11 +19,14 @@ namespace WasteCostCalculator
         }
         public void PopulateNewWasteFoodSelector() {
             NewWasteFoodSelector.DropDownStyle = ComboBoxStyle.DropDownList;
-            foodBindingSource.DataSource = DBUtils.getAllFoods().ToList();
-            var initialFood = DBUtils.GetFoodByName(NewWasteFoodSelector.Text);
-            newWasteQuantiryLabel.Text = initialFood.MeasurementUnit;
-            if(initialFood.Cost != -1)
-                newWasteFoodCostTextbox.Text = initialFood.Cost.ToString();
+            var foods = DBUtils.GetFoodsOrderedByWasteApperance();
+            foodBindingSource.DataSource = foods;
+            if(foods.Count > 0) {
+                var initialFood = foods.First();
+                newWasteQuantiryLabel.Text = initialFood.MeasurementUnit;
+                if(initialFood.Cost != -1)
+                    newWasteFoodCostTextbox.Text = initialFood.Cost.ToString();
+            }
         }
         private void foodsToolStripMenuItem_Click(object sender, EventArgs e) {
             Initializer.ShowSelectedPanel(FoodPanel);
@@ -55,6 +58,7 @@ namespace WasteCostCalculator
                 errorProvider.SetError(newFoodCostTextbox, "The cost of the food is required!");
                 newFoodCostTextbox.Focus();
             } else {
+                
                 Food food = new Food() { Name = newFoodNameTextBox.Text, Cost = float.Parse(newFoodCostTextbox.Text), MeasurementUnit = MeasurementUnitTextbox.Text };
                 switch(DBUtils.AddFoodToDB(food)) {
                     case newFoodErrors.NoError:
@@ -135,17 +139,21 @@ namespace WasteCostCalculator
 
         private void AddWasteBtn_Click(object sender, EventArgs e) {
             var quantityWasted = 0.0f;
-            if(newWasteQuantityTextBox.Text.Trim() == "") {
-                errorProvider.SetError(newWasteQuantityTextBox, "Please input a quantity");
+            if(NewWasteFoodSelector.Text.Trim() == "") {
+                MessageBox.Show("Insert at least one food item before adding wastes");
             } else {
-                if(newWasteFoodCostTextbox.Text.Trim() == "")
+                if(newWasteQuantityTextBox.Text.Trim() == "") {
                     errorProvider.SetError(newWasteQuantityTextBox, "Please input a quantity");
-                else {
-                    quantityWasted = float.Parse(newWasteQuantityTextBox.Text);
-                    Waste wasteToAdd = new Waste() { Date = Singleton.Istance.selectedDate, QuantityWasted = quantityWasted, Reason = newWasteReasonTextBox.Text, FoodCostAtWasteDate = float.Parse(newWasteFoodCostTextbox.Text) };
-                    DBUtils.AddWasteToDB(wasteToAdd, NewWasteFoodSelector.Text);
-                    Initializer.UpdateWastesListViewData(WastesListView);
-                    errorProvider.SetError(newWasteQuantityTextBox, "");
+                } else {
+                    if(newWasteFoodCostTextbox.Text.Trim() == "")
+                        errorProvider.SetError(newWasteQuantityTextBox, "Please input a quantity");
+                    else {
+                        quantityWasted = float.Parse(newWasteQuantityTextBox.Text);
+                        Waste wasteToAdd = new Waste() { Date = Singleton.Istance.selectedDate, QuantityWasted = quantityWasted, Reason = newWasteReasonTextBox.Text, FoodCostAtWasteDate = float.Parse(newWasteFoodCostTextbox.Text) };
+                        DBUtils.AddWasteToDB(wasteToAdd, NewWasteFoodSelector.Text);
+                        Initializer.UpdateWastesListViewData(WastesListView);
+                        errorProvider.SetError(newWasteQuantityTextBox, "");
+                    }
                 }
             }
         }
@@ -177,20 +185,22 @@ namespace WasteCostCalculator
 
         //TODO as for now there is no way to edit the date
         private void editWasteBtn_Click(object sender, EventArgs e) {
-            if(newWasteQuantityTextBox.Text.Trim() == "") {
-                errorProvider.SetError(newWasteQuantityTextBox, "Please input a quantity");
-            } else {
-                if(newWasteFoodCostTextbox.Text.Trim() == "")
+            if(NewWasteFoodSelector.Text.Trim() != "") {//TODO this case doesn't have an error message
+                if(newWasteQuantityTextBox.Text.Trim() == "") {
                     errorProvider.SetError(newWasteQuantityTextBox, "Please input a quantity");
-                else {
-                    if(WastesListView.SelectedIndices.Count == 1) {
-                        var wasteID = int.Parse(WastesListView.Items[WastesListView.SelectedIndices[0]].SubItems[3].Text);
-                        var associatedFoodID = DBUtils.GetFoodByName(NewWasteFoodSelector.Text).FoodId;
-                        var waste = new Waste() { WasteId = wasteID, Date = Singleton.Istance.selectedDate, FoodCostAtWasteDate = float.Parse(newWasteFoodCostTextbox.Text), QuantityWasted = float.Parse(newWasteQuantityTextBox.Text), FoodId = associatedFoodID };
-                        DBUtils.SaveEditedWasteToDB(waste);
-                        Initializer.UpdateWastesListViewData(WastesListView);
-                    } else
-                        MessageBox.Show("Plese select a waste to edit from the list");
+                } else {
+                    if(newWasteFoodCostTextbox.Text.Trim() == "")
+                        errorProvider.SetError(newWasteQuantityTextBox, "Please input a quantity");
+                    else {
+                        if(WastesListView.SelectedIndices.Count == 1) {
+                            var wasteID = int.Parse(WastesListView.Items[WastesListView.SelectedIndices[0]].SubItems[3].Text);
+                            var associatedFoodID = DBUtils.GetFoodByName(NewWasteFoodSelector.Text).FoodId;
+                            var waste = new Waste() { WasteId = wasteID, Date = Singleton.Istance.selectedDate, FoodCostAtWasteDate = float.Parse(newWasteFoodCostTextbox.Text), QuantityWasted = float.Parse(newWasteQuantityTextBox.Text), FoodId = associatedFoodID };
+                            DBUtils.SaveEditedWasteToDB(waste);
+                            Initializer.UpdateWastesListViewData(WastesListView);
+                        } else
+                            MessageBox.Show("Plese select a waste to edit from the list");
+                    }
                 }
             }
         }

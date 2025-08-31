@@ -33,7 +33,6 @@
         public static void UpdateAllFoodsListViewData(ListView listView) {
             listView.Items.Clear();
             var allFoods = DBUtils.getAllFoods();
-
             foreach ( var food in allFoods ) {
                 listView.Items.Add(food.toListViewItem());
             }

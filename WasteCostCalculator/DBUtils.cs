@@ -3,6 +3,7 @@
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Internal;
 using Microsoft.EntityFrameworkCore.Storage;
 
 namespace WasteCostCalculator {
@@ -11,7 +12,7 @@ namespace WasteCostCalculator {
             if(!File.Exists(WCCContext.DbName)) {
                 SQLiteConnection.CreateFile(WCCContext.DbName);
                 try {
-                    string connectionPath = String.Format("Data Source={0}", WCCContext.DbName);
+                    string connectionPath = string.Format("Data Source={0}", WCCContext.DbName);
                     using var connection = new SqliteConnection(connectionPath);
                     connection.Open();//for my understanding, this is needed to actually create the db
                     connection.Close();
@@ -125,6 +126,23 @@ namespace WasteCostCalculator {
             } catch {
                 MessageBox.Show("It was not possible to delete the entry", "Something went wrong");
             }
+        }
+        
+        /// <summary>
+        /// return all foods' name ordered by "apparence in waste table"
+        /// </summary>
+        /// <returns></returns>
+        /* group join create a pair <x,list<y>>
+         * this method create a pair of food names, with wastes that share the same foodId,
+         * so it's basically a pair of food Names, and wastes of that food
+         * then it just count the number of entry on the list, and order by it
+         * it returns the food
+         */
+        public static List<Food> GetFoodsOrderedByWasteApperance() {
+            var context = new WCCContext();
+            var results = context.Foods.GroupJoin(context.Waste, f => f.FoodId, w => w.FoodId,
+                (food, wastes) => new {food, Count = wastes.Count()}).OrderByDescending(fw => fw.Count).Select(fw => fw.food);
+            return results.ToList();
         }
         #endregion
         #region waste related utilities
